@@ -9,7 +9,7 @@ driver = webdriver.Chrome()
 driver.get("https://earthquake.usgs.gov/earthquakes/map")
 
 elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
-driver.execute_script('arguments[0].click()', elements[0])
+driver.execute_script('arguments[0].click()', elements[1])
 sleep(3)
 
 urls = []
