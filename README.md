@@ -7,10 +7,10 @@ The website includes information on the latest earthquakes occurred in last 24 h
 The program organizes the data in table format with relevant datatype.
 
 
-##Web page for latest updates
+## Web page for latest updates
 https://earthquake.usgs.gov/earthquakes/map
 
-##Web-driver 
+## Web-driver 
 The program uses Chrome driver that should be downloaded from website
 [chrome driver ](https://chromedriver.chromium.org/downloads).
 Relevant download should be performed according to your OS. 
