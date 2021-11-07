@@ -1,4 +1,4 @@
-#Web scraping project
+# Web scraping project
 The program retrieves available information from USGS Natrual Hazard website:
 
 https://www.usgs.gov/natural-hazards
@@ -35,7 +35,7 @@ The data is saved as output in pickle file which allows to preserve datatype.
 10. Process data and cast datatype when possible. 
 11. Save into pickle (.pkl) file.
 
-###Challenges
+### Challenges
 As the webpage is loading some elements are missing which caused us to get various errors.
 To deal with this problem we used selenium package in order to wait for all elements to load properly and select them after they are in the DOM.
 In addition, selenium was used in order to mimic human behaviour of clicking buttons.
@@ -45,12 +45,8 @@ In addition, selenium was used in order to mimic human behaviour of clicking but
 driver = webdriver.Chrome()
 driver.get(main_url)
 
-#Selenium used for click, wait for page load and select relevant elements.
+# Selenium used for click, wait for page load and select relevant elements.
 elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
 driver.execute_script('arguments[0].click()', elements[1])
 link = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
 ```
-
-""
-
-
