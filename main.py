@@ -14,7 +14,7 @@ import pandas as pd
 import re
 
 MAIN_URL = "https://earthquake.usgs.gov/earthquakes/map"
-
+NUM_TRIES = 50
 # Data scraping performed on Chrome browser.
 
 
@@ -136,26 +136,33 @@ def clean_dataframe(event_dataframe):
 
 
 def main():
-    while True:
+    for i in range(NUM_TRIES):
         try:
             driver = webdriver.Chrome()
-            url_list = get_urls_from_main_page(MAIN_URL, driver)
-            with open('urls.txt', 'w') as file:
-                for url in url_list:
-                    file.write(url + '\n')
-            with open('urls.txt', 'r') as file:
-                url_list = [line.strip() for line in file.readlines()]
-            print(url_list)
-            detail_url = get_detail_url(url_list)
-            dataframe = get_event_details(detail_url, driver)
-            updated_df = clean_dataframe(dataframe)
-            updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
+            new_url_list = list(set(get_urls_from_main_page(MAIN_URL, driver)))
+            url_list = []
+            with open('urls.txt', 'a+') as file:
+                file.seek(0)
+                old_url_list = [line.strip() for line in file.readlines()]
+                for i, url in enumerate(new_url_list):
+                    if url not in old_url_list:
+                        print(i, url)
+                        url_list.append(url)
+                        file.write(url + '\n')
+            if url_list:
+                detail_url = get_detail_url(url_list)
+                dataframe = get_event_details(detail_url, driver)
+                updated_df = clean_dataframe(dataframe)
+                dataframe.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
             print(f'Stale {e}')
         except exc.InvalidSessionIdException as e:
             print(f'ID {e}')
+        except FileNotFoundError:
+            with open('urls.txt', 'w') as file:
+                file.write('')
         else:
             break
         finally:
