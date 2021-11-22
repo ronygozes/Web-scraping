@@ -12,6 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 import pandas as pd
 import re
+from time import sleep
 
 MAIN_URL = "https://earthquake.usgs.gov/earthquakes/map"
 NUM_TRIES = 50
@@ -36,7 +37,7 @@ def get_urls_from_main_page(main_url, driver):
     return urls
 
 
-def get_detail_url(urls):
+def get_event_url(urls):
     """ preparing urls with relevant information for "details page"
     parameters: list of urls
     returns: updated list of urls for individual page
@@ -64,6 +65,7 @@ def get_event_details(detail_urls, driver):
     for url in detail_urls:
         driver.get(url)
         elements = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'dt'))
+        sleep(0.1)
         data = driver.find_elements(By.TAG_NAME, 'dd')
 
         # Extracting into list data categories, first element is url
@@ -152,11 +154,12 @@ def main():
                         url_list.append(url)
                         file.write(url + '\n')
             if url_list:
-                detail_url = get_detail_url(url_list)
+                detail_url = get_event_url(url_list)
                 dataframe = get_event_details(detail_url, driver)
                 updated_df = clean_dataframe(dataframe)
+                updated_df.to_csv('df.csv')
                 updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
-                updated_df.to_csv('earthquakes.csv')
+
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
