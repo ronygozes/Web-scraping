@@ -117,7 +117,9 @@ def clean_dataframe(event_dataframe):
     df_event_mod['Depth (km)'] = df_event_mod['Depth (km)'].str.replace(' km', '')
     df_event_mod['Travel Time Residual (s)'] = df_event_mod['Travel Time Residual (s)'].str.replace(' s', '')
     df_event_mod['Azimuthal Gap (deg)'] = df_event_mod['Azimuthal Gap (deg)'].str.replace('°', '')
-    df_event_mod['Minimum Distance (km)'] = df_event_mod['Minimum Distance (km)'].str.replace(' km', '')
+    df_event_mod['Minimum Distance (km)'] = df_event_mod['Minimum Distance (km)'].str.replace(' km', '').str.replace(' \(.+\)', '')
+    df_event_mod = df_event_mod.drop(['Location Source', 'Magnitude Source'], axis=1)
+    df_event_mod['Contributor'] = df_event_mod['Contributor'].str.replace(' 1', '')
 
     # Convert columns from strings to relevant datatype
     df_event_mod['Magnitude uncertainty'] = df_event_mod['Magnitude uncertainty'].astype('float')
@@ -144,16 +146,17 @@ def main():
             with open('urls.txt', 'a+') as file:
                 file.seek(0)
                 old_url_list = [line.strip() for line in file.readlines()]
-                for i, url in enumerate(new_url_list):
+                for j, url in enumerate(new_url_list):
                     if url not in old_url_list:
-                        print(i, url)
+                        print(j, url)
                         url_list.append(url)
                         file.write(url + '\n')
             if url_list:
                 detail_url = get_detail_url(url_list)
                 dataframe = get_event_details(detail_url, driver)
                 updated_df = clean_dataframe(dataframe)
-                dataframe.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
+                updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
+                updated_df.to_csv('earthquakes.csv')
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
