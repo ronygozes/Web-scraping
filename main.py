@@ -65,7 +65,7 @@ def get_event_details(detail_urls, driver):
     for url in detail_urls:
         driver.get(url)
         elements = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'dt'))
-        sleep(0.1)
+        sleep(0.5)
         data = driver.find_elements(By.TAG_NAME, 'dd')
 
         # Extracting into list data categories, first element is url
@@ -75,7 +75,7 @@ def get_event_details(detail_urls, driver):
             if 'uncertainty' in element:
                 element1 = element[:element.index("uncertainty") - 1]
                 clean_elem.append(element1)
-                element2 = element1.split()[0] + ' uncertainty'
+                element2 = element1.split()[0] + '_uncertainty'
                 clean_elem.append(element2)
             else:
                 clean_elem.append(element)
@@ -100,42 +100,81 @@ def get_event_details(detail_urls, driver):
     return pd.DataFrame(list_events)
 
 
-def clean_dataframe(event_dataframe):
-    """"
-    The function performs manual cleaning of labels, update of column names, removal of units from values
-    and moving the units to column names, assigning datatype to numerical columns.
+def rename_column(event_dataframe):
+    """
+    The function receives a dataframe as an argument,
+    performs manual update of column names to fit column names in sql main table 'earthquakes_events'.
+    The new names include also units where possible to remove units from the values
     The function returns new dataframe.
     """
-    # Rename of columns to include units
-    df_event_mod = event_dataframe.rename(columns={'Location uncertainty': 'Location uncertainty (km)',
-                                                   'Depth': 'Depth (km)',
-                                                   'Depth uncertainty': 'Depth uncertainty (km)',
-                                                   'Minimum Distance': 'Minimum Distance (km)',
-                                                   'Travel Time Residual': 'Travel Time Residual (s)',
-                                                   'Azimuthal Gap': 'Azimuthal Gap (deg)'})
+    df_event_mod = event_dataframe.rename(columns={'Magnitude':'magnitude',
+                                                   'Magnitude_uncertainty':'magnitude_uncertainty',
+                                                   'Location':'location',
+                                                   'Location_uncertainty': 'location_uncertainty_km',
+                                                   'Depth': 'depth_km',
+                                                   'Depth_uncertainty': 'depth_uncertainty_km',
+                                                   'Origin Time': 'origin_time',
+                                                   'Number of Stations':'num_of_stations',
+                                                   'Number of Phases': 'num_of_phases',
+                                                   'Minimum Distance': 'minimum_distance_km',
+                                                   'Travel Time Residual': 'travel_time_residual_sec',
+                                                   'Azimuthal Gap': 'azimuthal_gap_deg',
+                                                   'FE Region':'fe_region',
+                                                   'Review Status': 'review_status',
+                                                   'Catalog': 'catalog',
+                                                   'Contributor': 'contributor'})
 
-    # Remove common units and strings from numeric
-    df_event_mod['Location uncertainty (km)'] = df_event_mod['Location uncertainty (km)'].str.replace(' km', '')
-    df_event_mod['Depth (km)'] = df_event_mod['Depth (km)'].str.replace(' km', '')
-    df_event_mod['Travel Time Residual (s)'] = df_event_mod['Travel Time Residual (s)'].str.replace(' s', '')
-    df_event_mod['Azimuthal Gap (deg)'] = df_event_mod['Azimuthal Gap (deg)'].str.replace('°', '')
-    df_event_mod['Minimum Distance (km)'] = df_event_mod['Minimum Distance (km)'].str.replace(' km', '').str.replace(' \(.+\)', '')
-    df_event_mod = df_event_mod.drop(['Location Source', 'Magnitude Source'], axis=1)
-    df_event_mod['Contributor'] = df_event_mod['Contributor'].str.replace(' 1', '')
+    return df_event_mod
 
-    # Convert columns from strings to relevant datatype
-    df_event_mod['Magnitude uncertainty'] = df_event_mod['Magnitude uncertainty'].astype('float')
-    df_event_mod['Location uncertainty (km)'] = df_event_mod['Location uncertainty (km)'].astype('float')
-    df_event_mod['Depth (km)'] = round(pd.to_numeric(df_event_mod['Depth (km)'], errors='coerce'), 3)
-    df_event_mod['Depth uncertainty (km)'] = round(pd.to_numeric(df_event_mod['Depth uncertainty (km)'], errors='coerce'), 3)
-    df_event_mod['Travel Time Residual (s)'] = pd.to_numeric(df_event_mod['Travel Time Residual (s)'], errors='coerce')
-    df_event_mod['Number of Stations'] = pd.to_numeric(df_event_mod['Number of Stations'], errors='coerce')
-    df_event_mod['Origin Time'] = pd.to_datetime(df_event_mod['Origin Time'])
-    df_event_mod['Azimuthal Gap (deg)'] = pd.to_numeric(df_event_mod['Azimuthal Gap (deg)'], errors='coerce')
-    df_event_mod['Number of Stations'] = pd.to_numeric(df_event_mod['Number of Stations'], downcast='integer',
-                                                       errors='coerce')
-    df_event_mod['Number of Phases'] = pd.to_numeric(df_event_mod['Number of Phases'], downcast='integer',
+def remove_units_from_values(df_event_mod):
+    """
+    The function receive dataframe as argument and performs removal of units from values.
+    The function returns updated dataframe.
+    """
+    df_event_mod['location_uncertainty_km'] = df_event_mod['location_uncertainty_km'].str.replace(' km', '')
+    df_event_mod['depth_km'] = df_event_mod['depth_km'].str.replace(' km', '')
+    df_event_mod['travel_time_residual_sec'] = df_event_mod['travel_time_residual_sec'].str.replace(' s', '')
+    df_event_mod['azimuthal_gap_deg'] = df_event_mod['azimuthal_gap_deg'].str.replace('°', '')
+    df_event_mod['minimum_distance_km'] = df_event_mod['minimum_distance_km'].str.replace(' km', '').str.replace(
+        ' \(.+\)', '')
+    df_event_mod = df_event_mod.drop(['url', 'Location Source', 'Magnitude Source'], axis=1)
+    df_event_mod['contributor'] = df_event_mod['contributor'].str.replace(' 1', '')
+    df_event_mod['event_key'] = df_event_mod['Catalog'].str.split(' ').str[2]
+    df_event_mod['catalog'] = df_event_mod['catalog'].str.split(' ').str[0]
+    cols = df_event_mod.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    df_event_mod = df_event_mod[cols]
+
+    return df_event_mod
+
+def convert_datatype(df_event_mod):
+    """
+    The function receive dataframe as argument and assigns datatype to numerical columns.
+    The function returns updated dataframe.
+    """
+    df_event_mod['magnitude_uncertainty'] = df_event_mod['magnitude_uncertainty'].astype('float')
+    df_event_mod['location_uncertainty_km'] = df_event_mod['location_uncertainty_km'].astype('float')
+    df_event_mod['depth_km'] = round(pd.to_numeric(df_event_mod['depth_km'], errors='coerce'), 3)
+    df_event_mod['depth_uncertainty_km'] = round(pd.to_numeric(df_event_mod['depth_uncertainty_km'], errors='coerce'), 3)
+    df_event_mod['travel_time_residual_sec'] = pd.to_numeric(df_event_mod['travel_time_residual_sec'], errors='coerce')
+    df_event_mod['num_of_stations'] = pd.to_numeric(df_event_mod['num_of_stations'], downcast='integer', errors='coerce')
+    df_event_mod['origin_time'] = pd.to_datetime(df_event_mod['origin_time'])
+    df_event_mod['azimuthal_gap_deg'] = pd.to_numeric(df_event_mod['azimuthal_gap_deg'], errors='coerce')
+    df_event_mod['num_of_phases'] = pd.to_numeric(df_event_mod['num_of_phases'], downcast='integer',
                                                      errors='coerce')
+
+    return df_event_mod
+
+
+def clean_dataframe(event_dataframe):
+    """
+    The function receives dataframe as argument and calls different function to perforem data cleaning and lebeling.
+    The function returns new dataframe.
+    """
+    updated_df = rename_column(event_dataframe)
+    updated_df1 = remove_units_from_values(updated_df)
+    df_event_mod = convert_datatype(updated_df1)
+
     return df_event_mod
 
 
@@ -157,8 +196,7 @@ def main():
                 detail_url = get_event_url(url_list)
                 dataframe = get_event_details(detail_url, driver)
                 updated_df = clean_dataframe(dataframe)
-                updated_df.to_csv('df.csv')
-                updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
+                list_of_dicts = updated_df.to_dict(orient='records')
 
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
