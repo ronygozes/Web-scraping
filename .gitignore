@@ -1,11 +1,15 @@
-earthquakes.pkl
-
-urls.txt
-
-unpack.py
-
-Earthquakes.ipynb
-
 *.csv
 
 *.zip
+
+*.pkl
+
+*.ipynb
+
+urls.txt
+
+test.py
+
+unpack.py
+
+*__pycache__/
