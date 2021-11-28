@@ -15,7 +15,6 @@ import re
 from time import sleep
 
 MAIN_URL = "https://earthquake.usgs.gov/earthquakes/map"
-NUM_TRIES = 50
 # Data scraping performed on Chrome browser.
 
 
@@ -65,7 +64,7 @@ def get_event_details(detail_urls, driver):
     for url in detail_urls:
         driver.get(url)
         elements = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'dt'))
-        sleep(0.1)
+        sleep(0.3)
         data = driver.find_elements(By.TAG_NAME, 'dd')
 
         # Extracting into list data categories, first element is url
@@ -129,7 +128,7 @@ def clean_dataframe(event_dataframe):
                                                                  errors='coerce'), 3)
     df_event_mod['Travel Time Residual (s)'] = pd.to_numeric(df_event_mod['Travel Time Residual (s)'], errors='coerce')
     df_event_mod['Number of Stations'] = pd.to_numeric(df_event_mod['Number of Stations'], errors='coerce')
-    df_event_mod['Origin Time'] = pd.to_datetime(df_event_mod['Origin Time'])
+    df_event_mod['Origin Time'] = pd.to_datetime(df_event_mod['Origin Time'],errors='coerce')
     df_event_mod['Azimuthal Gap (deg)'] = pd.to_numeric(df_event_mod['Azimuthal Gap (deg)'], errors='coerce')
     df_event_mod['Number of Stations'] = pd.to_numeric(df_event_mod['Number of Stations'], downcast='integer',
                                                        errors='coerce')
@@ -138,8 +137,8 @@ def clean_dataframe(event_dataframe):
     return df_event_mod
 
 
-def main():
-    for i in range(NUM_TRIES):
+def main(attempts):
+    for i in range(attempts):
         driver = webdriver.Chrome()
         try:
             new_url_list = list(set(get_urls_from_main_page(MAIN_URL, driver)))
@@ -156,8 +155,9 @@ def main():
                 detail_url = get_event_url(url_list)
                 dataframe = get_event_details(detail_url, driver)
                 updated_df = clean_dataframe(dataframe)
-                updated_df.to_csv('df.csv')
-                updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
+
+                # updated_df.to_csv('df.csv')
+                # updated_df.to_pickle('earthquakes.pkl')  # saving in pickle format to preserve datatype.
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
@@ -167,8 +167,12 @@ def main():
         except FileNotFoundError:
             with open('urls.txt', 'w') as file:
                 file.write('')
+        except ValueError:
+            print('Error not recognizes')
         else:
-            break
+            if url_list:
+                return updated_df
+            return
         finally:
             driver.close()
 
