@@ -1,0 +1,3 @@
+
+ATTEMPTS = 50
+SLEEP = 0.5

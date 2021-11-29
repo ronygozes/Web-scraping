@@ -2,18 +2,28 @@ import pymysql.cursors
 import personal
 
 from configs import sql_config
+from datetime import datetime, timedelta
+
 
 PASSWORD = personal.PASSWORD
 USER = personal.USER
 
 
 def create_db():
+    """
+
+    :return:
+    """
     with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.CREATE_DATABASE)
 
 
 def create_tables():
+    """
+
+    :return:
+    """
     with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.USE)
@@ -25,11 +35,14 @@ def create_tables():
 
 
 def add_review_status(cursor, dic):
-    # sql = f"INSERT IGNORE INTO review_status VALUES ({dic['review_status']})"
+    """
+
+    :param cursor:
+    :param dic:
+    :return:
+    """
     sql = sql_config.INSERT_STR.format(table='review_status', column='review_status', value=dic['review_status'])
-    print(sql)
     cursor.execute(sql)
-    # sql2 = f"SELECT id FROM review_status WHERE review_status={dic['review_status']}"
     sql2 = sql_config.SELECT_ID.format(table='review_status', field='review_status', value=dic['review_status'])
     cursor.execute(sql2)
     id = cursor.fetchone()[0]
@@ -38,7 +51,12 @@ def add_review_status(cursor, dic):
 
 
 def add_fe_region(cursor, dic):
-    # sql = f"INSERT IGNORE INTO fe_region VALUES ({dic['fe_region']})"
+    """
+
+    :param cursor:
+    :param dic:
+    :return:
+    """
     sql = sql_config.INSERT_STR.format(table='fe_region', column='fe_region', value=dic['fe_region'])
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='fe_region', field='fe_region', value=dic['fe_region'])
@@ -49,7 +67,12 @@ def add_fe_region(cursor, dic):
 
 
 def add_catalog(cursor, dic):
-    # sql = f"INSERT IGNORE INTO catalog VALUES ({dic['catalog']})"
+    """
+
+    :param cursor:
+    :param dic:
+    :return:
+    """
     sql = sql_config.INSERT_STR.format(table='catalog', column='catalog', value=dic['catalog'])
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='catalog', field='catalog', value=dic['catalog'])
@@ -60,7 +83,12 @@ def add_catalog(cursor, dic):
 
 
 def add_contributor(cursor, dic):
-    # sql = f"INSERT IGNORE INTO contributor VALUES ({dic['contributor']})"
+    """
+
+    :param cursor:
+    :param dic:
+    :return:
+    """
     sql = sql_config.INSERT_STR.format(table='contributor', column='contributor', value=dic['contributor'])
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='contributor', field='contributor', value=dic['contributor'])
@@ -71,20 +99,26 @@ def add_contributor(cursor, dic):
 
 
 def add_earthquake_event(cursor, dic):
-    # sql = f"INSERT IGNORE INTO earthquake_events ({', '.join(dic.keys())})" \
-    #       f" VALUES ({', '.join(['%s'] * len(dic))})"
-    # sql = sql_config.INSERT_STR.format(table='earthquake_events', column=', '.join(dic.keys()),
-    #                                    value=', '.join(['%s'] * len(dic)))
+    """
+
+    :param cursor:
+    :param dic:
+    :return:
+    """
     values = ["'" + str(value) + "'" for value in dic.values()]
     values[0] = values[0][1:]
     values[-1] = values[-1][:-1]
-    sql = sql_config.INSERT_STR.format(table='earthquake_events', column=', '.join(dic.keys()),
-                                       value=", ".join(values))
-    print('sql',sql)
+    sql = sql_config.INSERT_STR.format(table='earthquake_events', column=', '.join(dic.keys()), value=", ".join(values))
     cursor.execute(sql)
 
 
 def add_batch(dicts, batch_size):
+    """
+
+    :param dicts:
+    :param batch_size:
+    :return:
+    """
     with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.USE)
@@ -115,29 +149,15 @@ def add_batch(dicts, batch_size):
             connection.commit()
 
 
-create_db()
-create_tables()
-dicts = [
-    dict(event_key='pr1234', magnitude=3.4, magnitude_uncertainty=0.1, location='abcdefg', location_uncertainty_km=2.4,
-         depth_uncertainty_km=2.6, depth_km=111, origin_time='2021-11-25 16:28:54.922329', num_of_stations=14,
-         num_of_phases=57, minimum_distance_km=54, travel_time_residual_sec=24, azimuthal_gap_deg=1, fe_region='dffghg',
-         review_status='automated', catalog='us', contributor='us'),
-    dict(event_key='ok4857', magnitude=3.4, magnitude_uncertainty=0.1, location='abcdefg', location_uncertainty_km=2.4,
-         depth_uncertainty_km=2.6, depth_km=111, origin_time='2021-11-25 17:05:31.399952', num_of_stations=14,
-         num_of_phases=57, minimum_distance_km=54, travel_time_residual_sec=24, azimuthal_gap_deg=1, fe_region='dffghg',
-         review_status='reviewed', catalog='us', contributor='us')
-]
+def select_events():
+    """
 
-add_batch(dicts, 3)
-
-
-def read(row):
-    pass
-
-
-def update(row, data):
-    pass
-
-
-def delete(index):
-    pass
+    :return:
+    """
+    with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql_config.USE)
+            time = datetime.now() - timedelta(days=2)
+            sql = f'SELECT event_key FROM earthquake_events WHERE origin_time > "{time}"'
+            cursor.execute(sql)
+            return [x[0] for x in cursor.fetchall()]

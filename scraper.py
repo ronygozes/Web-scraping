@@ -4,8 +4,8 @@ https://www.usgs.gov/natural-hazards/earthquake-hazards/earthquakes
 that includes information on the latest earthquakes occurred in last 24 hours worldwide with magnitude above 2.5.
 The program organizes the data in table format with relevant datatype.
 Please read README.md document for more details.
+Data scraping performed on Chrome browser.
 """
-
 import selenium.common.exceptions as exc
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,27 +14,48 @@ import pandas as pd
 import re
 from time import sleep
 
-MAIN_URL = "https://earthquake.usgs.gov/earthquakes/map"
-NUM_TRIES = 50
-# Data scraping performed on Chrome browser.
+from configs import scraper_config
+from clean_data import clean_dataframe
 
 
-def get_urls_from_main_page(main_url, driver):
+def get_urls_from_main_page(main_url, attempts):
     """ The function receives as parameter url to webpage of earthquake updates and
     returns list of urls of individual events.
     """
-    driver.get(main_url)
-    elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
-    driver.execute_script('arguments[0].click()', elements[1])
-    link = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
+    for _ in range(attempts):
+        driver = webdriver.Chrome()
+        try:
+            driver.get(main_url)
+            elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
+            print(elements[1])
+            driver.execute_script('arguments[0].click()', elements[1])
+            link = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
+            urls = []
 
-    urls = []
-    # Collection of urls to individual events
-    for i in range(1, len(elements)):
-        driver.execute_script('arguments[0].click()', elements[i])
-        link = driver.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0')[0]
-        urls.append(link.get_attribute('href'))
-    return urls
+            # Collection of urls of individual events
+            for i in range(1, len(elements)):
+                driver.execute_script('arguments[0].click()', elements[i])
+                link_element = driver.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0')
+                link_element = link_element[0]
+                link = link_element.get_attribute('href')
+                mag_text = link_element.get_attribute('text')
+                time_element = driver.find_elements(By.CSS_SELECTOR, 'dd.ng-tns-c101-0.ng-star-inserted')[0]
+                time = time_element.get_attribute('innerText')
+                dic = {'link': link, 'mag_text': mag_text, 'time': time}
+                urls.append(dic)
+        except exc.TimeoutException as e:
+            print(f'Timeout {e}')
+        except exc.StaleElementReferenceException as e:
+            print(f'Stale {e}')
+        except exc.InvalidSessionIdException as e:
+            print(f'ID {e}')
+        except Exception as e:
+            print('Error not recognized')
+            print(e)
+        else:
+            return urls
+        finally:
+            driver.close()
 
 
 def get_event_url(urls):
@@ -65,7 +86,8 @@ def get_event_details(detail_urls, driver):
     for url in detail_urls:
         driver.get(url)
         elements = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'dt'))
-        sleep(0.5)
+        sleep(scraper_config.SLEEP)
+
         data = driver.find_elements(By.TAG_NAME, 'dd')
 
         # Extracting into list data categories, first element is url
@@ -87,12 +109,12 @@ def get_event_details(detail_urls, driver):
             if '±' in info:
                 info1 = info[:info.index('±')].strip()
                 clean_data.append(info1)
-                info_uncert = info[info.index('±')+1:].strip()
+                info_uncert = info[info.index('±') + 1:].strip()
                 clean_data.append(info_uncert)
             else:
                 clean_data.append(info)
 
-            # Pairing categories with data itself
+        # Pairing categories with data itself
         data_extract = dict(list(zip(clean_elem, clean_data)))
         list_events.append(data_extract)
         print(f'Status: events from url {url} added to dict')
@@ -100,119 +122,31 @@ def get_event_details(detail_urls, driver):
     return pd.DataFrame(list_events)
 
 
-def rename_column(event_dataframe):
+def scraper(attempts, url_list):
     """
-    The function receives a dataframe as an argument,
-    performs manual update of column names to fit column names in sql main table 'earthquakes_events'.
-    The new names include also units where possible to remove units from the values
-    The function returns new dataframe.
+
+    :param attempts:
+    :param url_list:
+    :return:
     """
-    df_event_mod = event_dataframe.rename(columns={'Magnitude':'magnitude',
-                                                   'Magnitude_uncertainty':'magnitude_uncertainty',
-                                                   'Location':'location',
-                                                   'Location_uncertainty': 'location_uncertainty_km',
-                                                   'Depth': 'depth_km',
-                                                   'Depth_uncertainty': 'depth_uncertainty_km',
-                                                   'Origin Time': 'origin_time',
-                                                   'Number of Stations':'num_of_stations',
-                                                   'Number of Phases': 'num_of_phases',
-                                                   'Minimum Distance': 'minimum_distance_km',
-                                                   'Travel Time Residual': 'travel_time_residual_sec',
-                                                   'Azimuthal Gap': 'azimuthal_gap_deg',
-                                                   'FE Region':'fe_region',
-                                                   'Review Status': 'review_status',
-                                                   'Catalog': 'catalog',
-                                                   'Contributor': 'contributor'})
-
-    return df_event_mod
-
-def remove_units_from_values(df_event_mod):
-    """
-    The function receive dataframe as argument and performs removal of units from values.
-    The function returns updated dataframe.
-    """
-    df_event_mod['location_uncertainty_km'] = df_event_mod['location_uncertainty_km'].str.replace(' km', '')
-    df_event_mod['depth_km'] = df_event_mod['depth_km'].str.replace(' km', '')
-    df_event_mod['travel_time_residual_sec'] = df_event_mod['travel_time_residual_sec'].str.replace(' s', '')
-    df_event_mod['azimuthal_gap_deg'] = df_event_mod['azimuthal_gap_deg'].str.replace('°', '')
-    df_event_mod['minimum_distance_km'] = df_event_mod['minimum_distance_km'].str.replace(' km', '').str.replace(
-        ' \(.+\)', '')
-    df_event_mod = df_event_mod.drop(['url', 'Location Source', 'Magnitude Source'], axis=1)
-    df_event_mod['contributor'] = df_event_mod['contributor'].str.replace(' 1', '')
-    df_event_mod['event_key'] = df_event_mod['Catalog'].str.split(' ').str[2]
-    df_event_mod['catalog'] = df_event_mod['catalog'].str.split(' ').str[0]
-    cols = df_event_mod.columns.tolist()
-    cols = cols[-1:] + cols[:-1]
-    df_event_mod = df_event_mod[cols]
-
-    return df_event_mod
-
-def convert_datatype(df_event_mod):
-    """
-    The function receive dataframe as argument and assigns datatype to numerical columns.
-    The function returns updated dataframe.
-    """
-    df_event_mod['magnitude_uncertainty'] = df_event_mod['magnitude_uncertainty'].astype('float')
-    df_event_mod['location_uncertainty_km'] = df_event_mod['location_uncertainty_km'].astype('float')
-    df_event_mod['depth_km'] = round(pd.to_numeric(df_event_mod['depth_km'], errors='coerce'), 3)
-    df_event_mod['depth_uncertainty_km'] = round(pd.to_numeric(df_event_mod['depth_uncertainty_km'], errors='coerce'), 3)
-    df_event_mod['travel_time_residual_sec'] = pd.to_numeric(df_event_mod['travel_time_residual_sec'], errors='coerce')
-    df_event_mod['num_of_stations'] = pd.to_numeric(df_event_mod['num_of_stations'], downcast='integer', errors='coerce')
-    df_event_mod['origin_time'] = pd.to_datetime(df_event_mod['origin_time'])
-    df_event_mod['azimuthal_gap_deg'] = pd.to_numeric(df_event_mod['azimuthal_gap_deg'], errors='coerce')
-    df_event_mod['num_of_phases'] = pd.to_numeric(df_event_mod['num_of_phases'], downcast='integer',
-                                                     errors='coerce')
-
-    return df_event_mod
-
-
-def clean_dataframe(event_dataframe):
-    """
-    The function receives dataframe as argument and calls different function to perforem data cleaning and lebeling.
-    The function returns new dataframe.
-    """
-    updated_df = rename_column(event_dataframe)
-    updated_df1 = remove_units_from_values(updated_df)
-    df_event_mod = convert_datatype(updated_df1)
-
-    return df_event_mod
-
-
-def main():
-    for i in range(NUM_TRIES):
+    for _ in range(attempts):
+        driver = webdriver.Chrome()
         try:
-            driver = webdriver.Chrome()
-            new_url_list = list(set(get_urls_from_main_page(MAIN_URL, driver)))
-            url_list = []
-            with open('urls.txt', 'a+') as file:
-                file.seek(0)
-                old_url_list = [line.strip() for line in file.readlines()]
-                for j, url in enumerate(new_url_list):
-                    if url not in old_url_list:
-                        print(j, url)
-                        url_list.append(url)
-                        file.write(url + '\n')
-            if url_list:
-                detail_url = get_event_url(url_list)
-                dataframe = get_event_details(detail_url, driver)
-                updated_df = clean_dataframe(dataframe)
-                list_of_dicts = updated_df.to_dict(orient='records')
-
+            detail_url = get_event_url(url_list)
+            dataframe = get_event_details(detail_url, driver)
+            updated_df = clean_dataframe(dataframe)
+            list_of_dicts = updated_df.to_dict(orient='records')
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
             print(f'Stale {e}')
         except exc.InvalidSessionIdException as e:
             print(f'ID {e}')
-        except FileNotFoundError:
-            with open('urls.txt', 'w') as file:
-                file.write('')
+        except:
+            print('Error not recognized')
         else:
-            break
+            print(f'Created list of dictionaries with {len(list_of_dicts)} events.')
+            return list_of_dicts
         finally:
             driver.close()
-
-
-if __name__ == '__main__':
-    main()
 
