@@ -42,19 +42,25 @@ The data is saved in SQL database.
 12. Process data and cast datatype when possible.
 
 
+## Details on data process and cleaning before entering SQL database
+1. Units were removed from values and added to column names.
+2. As magnitude includes different units (different scale was used), created separate column to store the units. According to published reference all magnitude scales should yield approximately the same value of any given earthquake. 
+3. Magnitude, Location and Depth fields were split with their uncertainty values to create two separate columns e.g., 'magnitude' and 'magnitude_uncertainty'.
+4. 'Location Source' and 'Magnitude Source' fields from the website - decided not to add to database as include the same information as 'catalog'
+5. Assigned numeric and datetime datatype to columns where it was possible.
+
 ## Main steps for saving in SQL database:
 1. Each row of dataframe is converted into "event" dictionary.
 2. New database is created.
 3. New tables are defined with relevant columns (see ERD). Column names are identical to column names of dataframe.
-4. 'Location Source' and 'Magnitude Source' fields from the website, decided not to add to database as include the same information as 'catalog'
-5. As first step, the data is added to the secondary tables (contributor, review_status, catalog, fe_region) via separate functions and instead of data values relevant IDs are obtained from these tables and repalce the original values in the event dictionary.
-6. As second step, the updated dictionary is entered to the main table - 'earthquake_events'.
-7. Commit to sql tables is performed according to defined batch size -number of events after which one commit is performed.
-8. At the end of script final commit is donne to cover last events added after the most recent commit. 
+4. As first step, the data is added to the secondary tables (contributor, review_status, catalog, fe_region) via separate functions and instead of data values relevant IDs are obtained from these tables and repalce the original values in the event dictionary.
+5. As second step, the updated dictionary is entered to the main table - 'earthquake_events'.
+6. Commit to sql tables is performed according to defined batch size -number of events after which one commit is performed.
+7. At the end of script final commit is donne to cover last events added after the most recent commit. 
 
 ## Entity Relationship Diagram (ERD) of SQL database
 
-![img.png](img.png)
+![ERD_earthquakes_database](ERD_earthquakes_database.png)
 
 ### Challenges
 As the webpage is loading some elements are missing which caused us to get various errors.
