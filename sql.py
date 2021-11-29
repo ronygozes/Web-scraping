@@ -1,9 +1,8 @@
 import pymysql.cursors
-import personal
-
-from configs import sql_config
 from datetime import datetime, timedelta
 
+import personal
+from configs import sql_config
 
 PASSWORD = personal.PASSWORD
 USER = personal.USER
@@ -45,9 +44,9 @@ def add_review_status(cursor, dic):
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='review_status', field='review_status', value=dic['review_status'])
     cursor.execute(sql2)
-    id = cursor.fetchone()[0]
+    line_id = cursor.fetchone()[0]
     del dic['review_status']
-    dic['review_status_id'] = id
+    dic['review_status_id'] = line_id
 
 
 def add_fe_region(cursor, dic):
@@ -61,9 +60,9 @@ def add_fe_region(cursor, dic):
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='fe_region', field='fe_region', value=dic['fe_region'])
     cursor.execute(sql2)
-    id = cursor.fetchone()[0]
+    line_id = cursor.fetchone()[0]
     del dic['fe_region']
-    dic['fe_region_id'] = id
+    dic['fe_region_id'] = line_id
 
 
 def add_catalog(cursor, dic):
@@ -77,9 +76,9 @@ def add_catalog(cursor, dic):
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='catalog', field='catalog', value=dic['catalog'])
     cursor.execute(sql2)
-    id = cursor.fetchone()[0]
+    line_id = cursor.fetchone()[0]
     del dic['catalog']
-    dic['catalog_id'] = id
+    dic['catalog_id'] = line_id
 
 
 def add_contributor(cursor, dic):
@@ -93,9 +92,9 @@ def add_contributor(cursor, dic):
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='contributor', field='contributor', value=dic['contributor'])
     cursor.execute(sql2)
-    id = cursor.fetchone()[0]
+    line_id = cursor.fetchone()[0]
     del dic['contributor']
-    dic['contributor_id'] = id
+    dic['contributor_id'] = line_id
 
 
 def add_earthquake_event(cursor, dic):

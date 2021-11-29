@@ -26,4 +26,3 @@ def args_parse(func):
         func(args.batch, args.duration, args.magnitude, args.attempts)
 
     return wrapper
-

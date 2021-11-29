@@ -1,5 +1,6 @@
-from configs import clean_data_config
 import pandas as pd
+
+from configs import clean_data_config
 
 
 def split_magnitude(df):

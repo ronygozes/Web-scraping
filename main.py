@@ -1,9 +1,10 @@
-import sql
-from scraper import scraper, get_urls_from_main_page
-from args_parser import args_parse
-from configs import main_config
 from datetime import datetime, timedelta
 import re
+
+from configs import main_config
+from scraper import scraper, get_urls_from_main_page
+import sql
+from args_parser import args_parse
 
 
 @args_parse
@@ -52,5 +53,3 @@ def main(batch, duration, magnitude, attempts):
 
 if __name__ == '__main__':
     main()
-
-

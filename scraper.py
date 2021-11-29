@@ -29,7 +29,7 @@ def get_urls_from_main_page(main_url, attempts):
             elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
             print(elements[1])
             driver.execute_script('arguments[0].click()', elements[1])
-            link = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
+            WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
             urls = []
 
             # Collection of urls of individual events
@@ -142,11 +142,11 @@ def scraper(attempts, url_list):
             print(f'Stale {e}')
         except exc.InvalidSessionIdException as e:
             print(f'ID {e}')
-        except:
+        except Exception as e:
             print('Error not recognized')
+            print(e)
         else:
             print(f'Created list of dictionaries with {len(list_of_dicts)} events.')
             return list_of_dicts
         finally:
             driver.close()
-
