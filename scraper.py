@@ -29,7 +29,8 @@ def get_urls_from_main_page(main_url, attempts):
             elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
             print(elements[1])
             driver.execute_script('arguments[0].click()', elements[1])
-            WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
+            WebDriverWait(driver, timeout=scraper_config.MAX_SLEEP).until(lambda d: d.find_elements(
+                By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
             urls = []
 
             # Collection of urls of individual events
@@ -85,7 +86,8 @@ def get_event_details(detail_urls, driver):
     list_events = []
     for url in detail_urls:
         driver.get(url)
-        elements = WebDriverWait(driver, timeout=3).until(lambda d: d.find_elements(By.CSS_SELECTOR, 'dt'))
+        elements = WebDriverWait(driver, timeout=scraper_config.MAX_SLEEP).until(lambda d: d.find_elements(
+            By.CSS_SELECTOR, 'dt'))
         sleep(scraper_config.SLEEP)
 
         data = driver.find_elements(By.TAG_NAME, 'dd')
@@ -126,8 +128,8 @@ def scraper(attempts, url_list):
     """
 
     :param attempts:
-    :param url_list:
-    :return:
+    :param url_list: a list of urls which contain earthquake data to scrape
+    :return: a list of dictionaries with each one containing all relevant data from one url
     """
     for _ in range(attempts):
         driver = webdriver.Chrome()

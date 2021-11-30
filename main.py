@@ -10,12 +10,12 @@ from args_parser import args_parse
 @args_parse
 def main(batch, duration, magnitude, attempts):
     """
-
-    :param batch:
-    :param duration:
-    :param magnitude:
-    :param attempts:
-    :return:
+    this function receives a few parameters, and scrapes earthquake data accordingly.
+    It then calls sql utility function to insert the results into the database
+    :param batch: batch size to commit in the database
+    :param duration: how long back to scrape for values, 1-24 hours
+    :param magnitude: threshold magnitude for earthquake to scrape
+    :param attempts: number of attempts to try and scrape the site before giving up
     """
     print(batch, duration, magnitude, attempts)
     event_keys = sql.select_events()

@@ -56,3 +56,9 @@ INSERT_STR = "INSERT IGNORE INTO {table} ({column}) VALUES ('{value}')"
 
 SELECT_ID = "SELECT id FROM {table} WHERE {field}='{value}'"
 
+SELECT_EVENT_KEY_BY_TIME = 'SELECT event_key FROM earthquake_events WHERE origin_time > "{time}"'
+
+TIME_DELTA = 2
+
+HOST = 'localhost'
+
