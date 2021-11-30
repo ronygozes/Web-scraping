@@ -169,3 +169,4 @@ def select_events():
             sql = sql_config.SELECT_EVENT_KEY_BY_TIME.format(time=time)
             cursor.execute(sql)
             return [x[0] for x in cursor.fetchall()]
+

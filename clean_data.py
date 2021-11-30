@@ -10,7 +10,7 @@ def split_magnitude(df):
     The function returns new dataframe.
     """
     df[['magnitude', 'magnitude_units']] = df['Magnitude'].str.split(' ', expand=True)
-    df = df.drop('Magnitude', axis=1)
+    df = df.drop('Magnitude', axis=clean_data_config.COLS)
 
     return df
 
@@ -38,12 +38,12 @@ def remove_units_from_values(df_event_mod):
     df_event_mod['azimuthal_gap_deg'] = df_event_mod['azimuthal_gap_deg'].str.replace('°', '')
     df_event_mod['minimum_distance_km'] = df_event_mod['minimum_distance_km'].str.replace(' km', '').str. \
         replace(' (.+)', '')
-    df_event_mod = df_event_mod.drop(['url', 'Location Source', 'Magnitude Source'], axis=1)
+    df_event_mod = df_event_mod.drop(['url', 'Location Source', 'Magnitude Source'], axis=clean_data_config.COLS)
     df_event_mod['contributor'] = df_event_mod['contributor'].str.replace(' 1', '')
     df_event_mod['event_key'] = df_event_mod['catalog'].str.split(' ').str[2]
     df_event_mod['catalog'] = df_event_mod['catalog'].str.split(' ').str[0]
     cols = df_event_mod.columns.tolist()
-    cols = cols[-1:] + cols[:-1]
+    cols = cols[clean_data_config.LAST_MEMBER:] + cols[:clean_data_config.LAST_MEMBER]
     df_event_mod = df_event_mod[cols]
 
     return df_event_mod
@@ -57,9 +57,11 @@ def convert_datatype(df_event_mod):
     df_event_mod['magnitude'] = df_event_mod['magnitude'].astype('float')
     df_event_mod['magnitude_uncertainty'] = df_event_mod['magnitude_uncertainty'].astype('float')
     df_event_mod['location_uncertainty_km'] = df_event_mod['location_uncertainty_km'].astype('float')
-    df_event_mod['depth_km'] = round(pd.to_numeric(df_event_mod['depth_km'], errors='coerce'), 3)
+    df_event_mod['depth_km'] = round(pd.to_numeric(df_event_mod['depth_km'], errors='coerce'),
+                                     clean_data_config.NUM_OF_DIGITS)
     df_event_mod['depth_uncertainty_km'] = round(pd.to_numeric(df_event_mod['depth_uncertainty_km'],
-                                                               errors='coerce'), 3)
+                                                               errors='coerce'),
+                                                 clean_data_config.NUM_OF_DIGITS)
     df_event_mod['travel_time_residual_sec'] = pd.to_numeric(df_event_mod['travel_time_residual_sec'],
                                                              errors='coerce')
     df_event_mod['num_of_stations'] = pd.to_numeric(df_event_mod['num_of_stations'], downcast='integer',

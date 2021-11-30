@@ -14,3 +14,11 @@ COLUMNS = {'Magnitude_uncertainty': 'magnitude_uncertainty',
            'Catalog': 'catalog',
            'Contributor': 'contributor'
            }
+
+COLS = 1
+
+ROWS = 0
+
+NUM_OF_DIGITS = 3
+
+LAST_MEMBER = -1

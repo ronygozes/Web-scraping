@@ -1,3 +1,5 @@
-
 ATTEMPTS = 50
+
 SLEEP = 0.5
+
+MAX_SLEEP = 3
