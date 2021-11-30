@@ -10,20 +10,20 @@ USER = personal.USER
 
 def create_db():
     """
-
-    :return:
+    The function creates new sql database if it does not exist yet.
+    It takes as constant user name and password from "personal" config file.
     """
-    with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.CREATE_DATABASE)
 
 
 def create_tables():
     """
-
-    :return:
+    The function creates new sql tables if they do not exist yet.
+    It takes as constant user name and password from "personal" config file.
     """
-    with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.USE)
             cursor.execute(sql_config.CREATE_REVIEW)
@@ -35,10 +35,11 @@ def create_tables():
 
 def add_review_status(cursor, dic):
     """
+    Addition of line to review_status table after check that does not exist
+    and updates the dictionary of event with review_id instead of review status.
 
-    :param cursor:
-    :param dic:
-    :return:
+    :param cursor: pymysql object that allows access to sql
+    :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='review_status', column='review_status', value=dic['review_status'])
     cursor.execute(sql)
@@ -51,10 +52,11 @@ def add_review_status(cursor, dic):
 
 def add_fe_region(cursor, dic):
     """
+    Adds a line to fe_region table after check that does not exist
+    and updates the dictionary of event with fe_region_id instead of fe_region.
 
-    :param cursor:
-    :param dic:
-    :return:
+    :param cursor: pymysql object that allows access to sql
+    :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='fe_region', column='fe_region', value=dic['fe_region'])
     cursor.execute(sql)
@@ -67,10 +69,11 @@ def add_fe_region(cursor, dic):
 
 def add_catalog(cursor, dic):
     """
+    Adds a line to catalog table after check that does not exist
+    and updates the dictionary of event with catalog_id instead of catalog.
 
-    :param cursor:
-    :param dic:
-    :return:
+    :param cursor: pymysql object that allows access to sql
+    :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='catalog', column='catalog', value=dic['catalog'])
     cursor.execute(sql)
@@ -83,10 +86,11 @@ def add_catalog(cursor, dic):
 
 def add_contributor(cursor, dic):
     """
+    Adds a line to contributor table after check that does not exist
+    and updates the dictionary of event with contributor_id instead of contributor field.
 
-    :param cursor:
-    :param dic:
-    :return:
+    :param cursor: pymysql object that allows access to sql
+    :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='contributor', column='contributor', value=dic['contributor'])
     cursor.execute(sql)
@@ -99,10 +103,11 @@ def add_contributor(cursor, dic):
 
 def add_earthquake_event(cursor, dic):
     """
+    It is assumed that the dictionary already contains foreign ids for other related tables.
+    Adds a line to main earthquakes table after check that does not exist.
 
-    :param cursor:
-    :param dic:
-    :return:
+    :param cursor: pymysql object that allows access to sql
+    :param dic: dictionary of earthquake event details
     """
     values = ["'" + str(value) + "'" for value in dic.values()]
     values[0] = values[0][1:]
@@ -113,12 +118,15 @@ def add_earthquake_event(cursor, dic):
 
 def add_batch(dicts, batch_size):
     """
+    The function checks that there are no duplicate lines in scrapped data.
+    The function calls other functions to add data to SQL tables
+    and performs a commit according to defined batch size.
+    It takes as constant user name and password from "personal" config file.
 
-    :param dicts:
-    :param batch_size:
-    :return:
+    :param dicts: list of dictionaries (event details)
+    :param batch_size: integer - define how many lines to add before committing to the database
     """
-    with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.USE)
 
@@ -129,13 +137,13 @@ def add_batch(dicts, batch_size):
                     new_dicts.append(dic)
                     keys.append(dic['event_key'])
 
-            sql = "SELECT event_key FROM earthquake_events"
-            cursor.execute(sql)
-            events_keys = [key[0] for key in cursor.fetchall()]
+            # sql = "SELECT event_key FROM earthquake_events"
+            # cursor.execute(sql)
+            # events_keys = [key[0] for key in cursor.fetchall()]
 
             for i, dic in enumerate(new_dicts):
-                if dic['event_key'] in events_keys:
-                    continue
+                # if dic['event_key'] in events_keys:
+                #     continue
                 if i % batch_size == 0:
                     connection.commit()
 
@@ -150,13 +158,14 @@ def add_batch(dicts, batch_size):
 
 def select_events():
     """
-
-    :return:
+    The function queries sql database for event_key (unique identifier) from last TIME_DELTA days.
+    It takes as constant user name and password from "personal" config file.
+    :return: a list of event_keys.
     """
-    with pymysql.connect(host='localhost', user=USER, password=PASSWORD) as connection:
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql_config.USE)
-            time = datetime.now() - timedelta(days=2)
-            sql = f'SELECT event_key FROM earthquake_events WHERE origin_time > "{time}"'
+            time = datetime.now() - timedelta(days=sql_config.TIME_DELTA)
+            sql = sql_config.SELECT_EVENT_KEY_BY_TIME.format(time=time)
             cursor.execute(sql)
             return [x[0] for x in cursor.fetchall()]
