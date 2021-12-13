@@ -137,7 +137,13 @@ def add_batch(dicts, batch_size):
                     new_dicts.append(dic)
                     keys.append(dic['event_key'])
 
+            # sql = "SELECT event_key FROM earthquake_events"
+            # cursor.execute(sql)
+            # events_keys = [key[0] for key in cursor.fetchall()]
+
             for i, dic in enumerate(new_dicts):
+                # if dic['event_key'] in events_keys:
+                #     continue
                 if i % batch_size == 0:
                     connection.commit()
 
@@ -163,3 +169,4 @@ def select_events():
             sql = sql_config.SELECT_EVENT_KEY_BY_TIME.format(time=time)
             cursor.execute(sql)
             return [x[0] for x in cursor.fetchall()]
+

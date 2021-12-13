@@ -61,4 +61,3 @@ SELECT_EVENT_KEY_BY_TIME = 'SELECT event_key FROM earthquake_events WHERE origin
 TIME_DELTA = 2
 
 HOST = 'localhost'
-
