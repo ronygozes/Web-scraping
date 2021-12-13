@@ -7,6 +7,13 @@ import sql
 from args_parser import args_parse
 
 
+TIME = 'time'
+EVENT_KEY = 'event_key'
+MAGNITUDE = 'magnitude'
+LINK = 'link'
+MAG_TEXT = 'mag_text'
+
+
 @args_parse
 def main(batch, duration, magnitude, attempts):
     """
@@ -23,22 +30,23 @@ def main(batch, duration, magnitude, attempts):
     if not event_list:
         print('Could not connect at this time, try again later, or allow more tries')
         return
+
     for dic in event_list:
-        time = datetime.fromisoformat(re.match('(.*)[(]', dic['time']).group(1).strip())
-        event_key = re.match('.*/([a-z0-9]+)/$', dic['link']).group(1)
-        mag = re.match('.*([0-9]+[.][0-9])+.*', dic['mag_text']).group(1)
-        dic['time'] = time
-        dic['event_key'] = event_key
-        dic['magnitude'] = float(mag)
+        time = datetime.fromisoformat(re.match('(.*)[(]', dic[TIME]).group(1).strip())
+        event_key = re.match('.*/([a-z0-9]+)/$', dic[LINK]).group(1)
+        mag = re.match('.*([0-9]+[.][0-9])+.*', dic[MAG_TEXT]).group(1)
+        dic[TIME] = time
+        dic[EVENT_KEY] = event_key
+        dic[MAGNITUDE] = float(mag)
 
     scrape_urls = []
     for dic in event_list:
-        if dic['event_key'] in event_keys:
+        if dic[EVENT_KEY] in event_keys:
             continue
         min_time = datetime.now() - timedelta(hours=duration)
-        if dic['time'] >= min_time:
-            if dic['magnitude'] >= magnitude:
-                scrape_urls.append(dic['link'])
+        if dic[TIME] >= min_time:
+            if dic[MAGNITUDE] >= magnitude:
+                scrape_urls.append(dic[LINK])
 
     if not scrape_urls:
         print('No new values available at this time, try again later')

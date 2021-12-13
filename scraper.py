@@ -17,6 +17,14 @@ from time import sleep
 from configs import scraper_config
 from clean_data import clean_dataframe
 
+ELEMENTS_CLASS = 'mat-list-item'
+TIME_ELEMENT_CLASS = 'dd.ng-tns-c101-0.ng-star-inserted'
+LINK_ELEMENT_CLASS = 'a.ng-tns-c101-0'
+JS_CLICK = 'arguments[0].click()'
+LINK = 'link'
+MAG_TEXT = 'mag_text'
+TIME = 'time'
+
 
 def get_urls_from_main_page(main_url, attempts):
     """ The function receives as parameter url to webpage of earthquake updates and
@@ -26,23 +34,23 @@ def get_urls_from_main_page(main_url, attempts):
         driver = webdriver.Chrome()
         try:
             driver.get(main_url)
-            elements = driver.find_elements(By.TAG_NAME, 'mat-list-item')
+            elements = driver.find_elements(By.TAG_NAME, ELEMENTS_CLASS)
             print(elements[1])
-            driver.execute_script('arguments[0].click()', elements[1])
+            driver.execute_script(JS_CLICK, elements[1])
             WebDriverWait(driver, timeout=scraper_config.MAX_SLEEP).until(lambda d: d.find_elements(
-                By.CSS_SELECTOR, 'a.ng-tns-c101-0'))[-1]
+                By.CSS_SELECTOR, LINK_ELEMENT_CLASS))[-1]
             urls = []
 
             # Collection of urls of individual events
             for i in range(1, len(elements)):
-                driver.execute_script('arguments[0].click()', elements[i])
-                link_element = driver.find_elements(By.CSS_SELECTOR, 'a.ng-tns-c101-0')
+                driver.execute_script(JS_CLICK, elements[i])
+                link_element = driver.find_elements(By.CSS_SELECTOR, LINK_ELEMENT_CLASS)
                 link_element = link_element[0]
                 link = link_element.get_attribute('href')
                 mag_text = link_element.get_attribute('text')
-                time_element = driver.find_elements(By.CSS_SELECTOR, 'dd.ng-tns-c101-0.ng-star-inserted')[0]
+                time_element = driver.find_elements(By.CSS_SELECTOR, TIME_ELEMENT_CLASS)[0]
                 time = time_element.get_attribute('innerText')
-                dic = {'link': link, 'mag_text': mag_text, 'time': time}
+                dic = {LINK: link, MAG_TEXT: mag_text, TIME: time}
                 urls.append(dic)
         except exc.TimeoutException as e:
             print(f'Timeout {e}')
