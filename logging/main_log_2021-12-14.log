@@ -1,0 +1,8 @@
+2021-12-14 23:41:27,768-INFO-FILE:args_parser.py-FUNC:wrapper-LINE:27-got args from command line: duration: 25, magnitude: 0.0, batch: 1, attempts: 50
+2021-12-14 23:41:27,768-INFO-FILE:main.py-FUNC:main-LINE:26-started program
+2021-12-14 23:41:27,775-INFO-FILE:main.py-FUNC:main-LINE:29-database connection working
+2021-12-14 23:41:28,719-INFO-FILE:scraper.py-FUNC:get_urls_from_main_page-LINE:28-connected to web driver
+2021-12-14 23:41:37,309-INFO-FILE:scraper.py-FUNC:get_urls_from_main_page-LINE:58-got urls for scraping
+2021-12-14 23:41:37,375-INFO-FILE:main.py-FUNC:main-LINE:36-got urls for scraping
+2021-12-14 23:41:38,314-INFO-FILE:scraper.py-FUNC:scraper-LINE:142-url list created
+2021-12-14 23:41:39,155-ERROR-FILE:scraper.py-FUNC:scraper-LINE:155-Error not recognized
