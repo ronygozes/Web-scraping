@@ -7,8 +7,10 @@ CREATE_EARTHQUAKES = "CREATE TABLE IF NOT EXISTS earthquake_events (" \
                    "magnitude FLOAT," \
                    "magnitude_uncertainty FLOAT," \
                    "magnitude_units VARCHAR(8)," \
-                   "location VARCHAR(45)," \
+                   "location_latitude FLOAT," \
+                   "location_longitude FLOAT," \
                    "location_uncertainty_km FLOAT," \
+                   "elevation FLOAT," \
                    "depth_km FLOAT," \
                    "depth_uncertainty_km FLOAT," \
                    "origin_time DATETIME," \
@@ -26,6 +28,17 @@ CREATE_EARTHQUAKES = "CREATE TABLE IF NOT EXISTS earthquake_events (" \
                    "FOREIGN KEY (review_status_id) REFERENCES review_status(id) ON DELETE CASCADE," \
                    "FOREIGN KEY (catalog_id) REFERENCES catalog(id) ON DELETE CASCADE," \
                    "FOREIGN KEY (contributor_id) REFERENCES contributor(id) ON DELETE CASCADE" \
+                   ")"
+
+CREATE_WEATHER = "CREATE TABLE IF NOT EXISTS weather (" \
+                   "id INT NOT NULL AUTO_INCREMENT," \
+                   "earthquake_event_id INT," \
+                   "time DATETIME," \
+                   "air_temperature_deg_c FLOAT," \
+                   "precipitation_mm_h FLOAT," \
+                   "wind_speed_m_s FLOAT," \
+                   "PRIMARY KEY (id)," \
+                   "FOREIGN KEY (earthquake_event_id) REFERENCES earthquake_events(id) ON DELETE CASCADE" \
                    ")"
 
 CREATE_REVIEW = "CREATE TABLE IF NOT EXISTS review_status (" \

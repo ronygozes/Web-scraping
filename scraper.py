@@ -14,16 +14,8 @@ import pandas as pd
 import re
 from time import sleep
 
-from configs import scraper_config
+from configs.scraper_config import *
 from clean_data import clean_dataframe
-
-ELEMENTS_CLASS = 'mat-list-item'
-TIME_ELEMENT_CLASS = 'dd.ng-tns-c101-0.ng-star-inserted'
-LINK_ELEMENT_CLASS = 'a.ng-tns-c101-0'
-JS_CLICK = 'arguments[0].click()'
-LINK = 'link'
-MAG_TEXT = 'mag_text'
-TIME = 'time'
 
 
 def get_urls_from_main_page(main_url, attempts):
@@ -35,9 +27,9 @@ def get_urls_from_main_page(main_url, attempts):
         try:
             driver.get(main_url)
             elements = driver.find_elements(By.TAG_NAME, ELEMENTS_CLASS)
-            print(elements[1])
+            #todo add logging(elements[1])
             driver.execute_script(JS_CLICK, elements[1])
-            WebDriverWait(driver, timeout=scraper_config.MAX_SLEEP).until(lambda d: d.find_elements(
+            WebDriverWait(driver, timeout=MAX_SLEEP).until(lambda d: d.find_elements(
                 By.CSS_SELECTOR, LINK_ELEMENT_CLASS))[-1]
             urls = []
 
@@ -90,13 +82,16 @@ def get_event_details(detail_urls, driver):
     The function receives list of urls providing details for specific earthquakes.
     After extraction relevant information it returns a dataframe table
     where each row includes information on individual earthquake.
+    :param detail_urls: list of events urls
+    :param driver: webchrome driver
+    :return: dataframe with events details
     """
     list_events = []
     for url in detail_urls:
         driver.get(url)
-        elements = WebDriverWait(driver, timeout=scraper_config.MAX_SLEEP).until(lambda d: d.find_elements(
+        elements = WebDriverWait(driver, timeout=MAX_SLEEP).until(lambda d: d.find_elements(
             By.CSS_SELECTOR, 'dt'))
-        sleep(scraper_config.SLEEP)
+        sleep(SLEEP)
 
         data = driver.find_elements(By.TAG_NAME, 'dd')
 
@@ -127,15 +122,15 @@ def get_event_details(detail_urls, driver):
         # Pairing categories with data itself
         data_extract = dict(list(zip(clean_elem, clean_data)))
         list_events.append(data_extract)
-        print(f'Status: events from url {url} added to dict')
+        #todo add logging(f'Status: events from url {url} added to dict')
 
     return pd.DataFrame(list_events)
 
 
 def scraper(attempts, url_list):
     """
-
-    :param attempts:
+    scrapes for earthquake events from usgs website
+    :param attempts: num of scrape attempts before giving up
     :param url_list: a list of urls which contain earthquake data to scrape
     :return: a list of dictionaries with each one containing all relevant data from one url
     """
@@ -156,7 +151,7 @@ def scraper(attempts, url_list):
             print('Error not recognized')
             print(e)
         else:
-            print(f'Created list of dictionaries with {len(list_of_dicts)} events.')
+            #todo add logging(f'Created list of dictionaries with {len(list_of_dicts)} events.')
             return list_of_dicts
         finally:
             driver.close()

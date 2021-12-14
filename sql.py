@@ -1,5 +1,5 @@
 import pymysql.cursors
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import personal
 from configs import sql_config
@@ -31,6 +31,7 @@ def create_tables():
             cursor.execute(sql_config.CREATE_FE_REGION)
             cursor.execute(sql_config.CREATE_CATALOG)
             cursor.execute(sql_config.CREATE_EARTHQUAKES)
+            cursor.execute(sql_config.CREATE_WEATHER)
 
 
 def add_review_status(cursor, dic):
@@ -59,6 +60,7 @@ def add_fe_region(cursor, dic):
     :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='fe_region', column='fe_region', value=dic['fe_region'])
+    #todo add logging
     cursor.execute(sql)
     sql2 = sql_config.SELECT_ID.format(table='fe_region', field='fe_region', value=dic['fe_region'])
     cursor.execute(sql2)
@@ -109,11 +111,37 @@ def add_earthquake_event(cursor, dic):
     :param cursor: pymysql object that allows access to sql
     :param dic: dictionary of earthquake event details
     """
+    #todo add logging('add_earthquake_event')
     values = ["'" + str(value) + "'" for value in dic.values()]
+    #todo add logging('sql add earth', values)
     values[0] = values[0][1:]
     values[-1] = values[-1][:-1]
     sql = sql_config.INSERT_STR.format(table='earthquake_events', column=', '.join(dic.keys()), value=", ".join(values))
     cursor.execute(sql)
+
+
+def add_weather_events(weather_events, batch_size):
+    """
+    adds weather events to the database in its own table
+    :param weather_events: list of weather events details
+    :param batch_size: integer - define how many lines to add before committing to the database
+    """
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql_config.USE)
+            for i, dic in enumerate(weather_events):
+                if i % batch_size == 0:
+                    connection.commit()
+
+                values = ["'" + str(value) + "'" for value in dic.values()]
+                #todo add logging('sql add weather', values)
+                values[0] = values[0][1:]
+                values[-1] = values[-1][:-1]
+                sql = sql_config.INSERT_STR.format(table='weather', column=', '.join(dic.keys()),
+                                                   value=", ".join(values))
+                cursor.execute(sql)
+
+            connection.commit()
 
 
 def add_batch(dicts, batch_size):
@@ -137,13 +165,7 @@ def add_batch(dicts, batch_size):
                     new_dicts.append(dic)
                     keys.append(dic['event_key'])
 
-            # sql = "SELECT event_key FROM earthquake_events"
-            # cursor.execute(sql)
-            # events_keys = [key[0] for key in cursor.fetchall()]
-
             for i, dic in enumerate(new_dicts):
-                # if dic['event_key'] in events_keys:
-                #     continue
                 if i % batch_size == 0:
                     connection.commit()
 
@@ -169,4 +191,25 @@ def select_events():
             sql = sql_config.SELECT_EVENT_KEY_BY_TIME.format(time=time)
             cursor.execute(sql)
             return [x[0] for x in cursor.fetchall()]
+
+
+def get_details_by_key(key):
+    """
+    get details about a specific event by event key from earthquake_events table in database
+    :param key: event key to retrieve
+    :return: dictionary with event details
+    """
+    with pymysql.connect(host=sql_config.HOST, user=USER, password=PASSWORD) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql_config.USE)
+            sql = f'SELECT id, origin_time, location_latitude, location_longitude FROM earthquake_events ' \
+                  f'WHERE event_key="{key}"'
+            cursor.execute(sql)
+            event = cursor.fetchone()
+
+            return {'id': event[0], 'time': event[1].timestamp(),
+                    'lat': event[2], 'long': event[3]}
+
+
+
 
