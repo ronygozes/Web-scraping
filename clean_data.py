@@ -50,10 +50,9 @@ def remove_units_from_values(df_event_mod):
     The function receive dataframe as argument and performs removal of units from values.
     The function returns updated dataframe.
     """
+    df_event_mod['event_key'] = df_event_mod['catalog'].str.split(' ').str[2]
     col_list = ['location_uncertainty_km', 'depth_km', 'travel_time_residual_sec', 'minimum_distance_km',
                 'contributor', 'catalog']
-    df_event_mod['event_key'] = df_event_mod['catalog'].str.split(' ').str[2]
-
     for col in col_list:
         df_event_mod[col] = df_event_mod[col].str.split(' ').str[0]
 
@@ -64,7 +63,6 @@ def remove_units_from_values(df_event_mod):
     df_event_mod['location_longitude'] = df_event_mod['location_longitude'].apply(longitude)
     df_event_mod['fe_region'] = df_event_mod['fe_region'].str.replace('\'', '')
     df_event_mod = df_event_mod.drop(['url', 'Location Source', 'Magnitude Source'], axis=clean_data_config.COLS)
-
     cols = df_event_mod.columns.tolist()
     cols = cols[clean_data_config.LAST_MEMBER:] + cols[:clean_data_config.LAST_MEMBER]
     df_event_mod = df_event_mod[cols]
@@ -82,3 +80,4 @@ def clean_dataframe(dataframe):
     df_event_mod = remove_units_from_values(updated_df)
 
     return df_event_mod
+
