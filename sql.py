@@ -1,5 +1,6 @@
 import pymysql.cursors
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+import logging
 
 import personal
 from configs import sql_config
@@ -44,11 +45,13 @@ def add_review_status(cursor, dic):
     """
     sql = sql_config.INSERT_STR.format(table='review_status', column='review_status', value=dic['review_status'])
     cursor.execute(sql)
+    logging.info('added review status to review_status table')
     sql2 = sql_config.SELECT_ID.format(table='review_status', field='review_status', value=dic['review_status'])
     cursor.execute(sql2)
     line_id = cursor.fetchone()[0]
     del dic['review_status']
     dic['review_status_id'] = line_id
+    logging.info('added review_status_id and removed review_status')
 
 
 def add_fe_region(cursor, dic):
@@ -60,13 +63,14 @@ def add_fe_region(cursor, dic):
     :param dic: dictionary of earthquake event details
     """
     sql = sql_config.INSERT_STR.format(table='fe_region', column='fe_region', value=dic['fe_region'])
-    #todo add logging
     cursor.execute(sql)
+    logging.info('added region to fe_region table')
     sql2 = sql_config.SELECT_ID.format(table='fe_region', field='fe_region', value=dic['fe_region'])
     cursor.execute(sql2)
     line_id = cursor.fetchone()[0]
     del dic['fe_region']
     dic['fe_region_id'] = line_id
+    logging.info('added region id and removed region')
 
 
 def add_catalog(cursor, dic):
@@ -79,11 +83,13 @@ def add_catalog(cursor, dic):
     """
     sql = sql_config.INSERT_STR.format(table='catalog', column='catalog', value=dic['catalog'])
     cursor.execute(sql)
+    logging.info('added catalog to catalog table')
     sql2 = sql_config.SELECT_ID.format(table='catalog', field='catalog', value=dic['catalog'])
     cursor.execute(sql2)
     line_id = cursor.fetchone()[0]
     del dic['catalog']
     dic['catalog_id'] = line_id
+    logging.info('added catalog id and removed catalog')
 
 
 def add_contributor(cursor, dic):
@@ -96,11 +102,13 @@ def add_contributor(cursor, dic):
     """
     sql = sql_config.INSERT_STR.format(table='contributor', column='contributor', value=dic['contributor'])
     cursor.execute(sql)
+    logging.info('added contributor to contributor table')
     sql2 = sql_config.SELECT_ID.format(table='contributor', field='contributor', value=dic['contributor'])
     cursor.execute(sql2)
     line_id = cursor.fetchone()[0]
     del dic['contributor']
     dic['contributor_id'] = line_id
+    logging.info('added contributor id and removed contributor')
 
 
 def add_earthquake_event(cursor, dic):
@@ -111,13 +119,12 @@ def add_earthquake_event(cursor, dic):
     :param cursor: pymysql object that allows access to sql
     :param dic: dictionary of earthquake event details
     """
-    #todo add logging('add_earthquake_event')
     values = ["'" + str(value) + "'" for value in dic.values()]
-    #todo add logging('sql add earth', values)
     values[0] = values[0][1:]
     values[-1] = values[-1][:-1]
     sql = sql_config.INSERT_STR.format(table='earthquake_events', column=', '.join(dic.keys()), value=", ".join(values))
     cursor.execute(sql)
+    logging.info('added earthquake event to database')
 
 
 def add_weather_events(weather_events, batch_size):
@@ -132,9 +139,8 @@ def add_weather_events(weather_events, batch_size):
             for i, dic in enumerate(weather_events):
                 if i % batch_size == 0:
                     connection.commit()
-
+                    logging.info('committed changes to weather table in database')
                 values = ["'" + str(value) + "'" for value in dic.values()]
-                #todo add logging('sql add weather', values)
                 values[0] = values[0][1:]
                 values[-1] = values[-1][:-1]
                 sql = sql_config.INSERT_STR.format(table='weather', column=', '.join(dic.keys()),
@@ -142,6 +148,7 @@ def add_weather_events(weather_events, batch_size):
                 cursor.execute(sql)
 
             connection.commit()
+            logging.info('committed last commit to weather table in database')
 
 
 def add_batch(dicts, batch_size):
@@ -168,6 +175,7 @@ def add_batch(dicts, batch_size):
             for i, dic in enumerate(new_dicts):
                 if i % batch_size == 0:
                     connection.commit()
+                    logging.info('committed changes to a few tables in database')
 
                 add_review_status(cursor, dic)
                 add_fe_region(cursor, dic)
@@ -176,6 +184,7 @@ def add_batch(dicts, batch_size):
                 add_earthquake_event(cursor, dic)
 
             connection.commit()
+            logging.info('committed last commit to a few tables in database')
 
 
 def select_events():

@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from configs import args_parser_config as config
 
@@ -23,6 +24,8 @@ def args_parse(func):
                             type=int, default=config.ATTEMPTS)
 
         args = parser.parse_args()
+        logging.info(f'got args from command line: duration: {args.duration}, magnitude: {args.magnitude}, '
+                     f'batch: {args.batch}, attempts: {args.attempts}')
         func(args.batch, args.duration, args.magnitude, args.attempts)
 
     return wrapper

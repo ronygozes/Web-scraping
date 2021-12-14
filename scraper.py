@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import pandas as pd
 import re
 from time import sleep
+import logging
 
 from configs.scraper_config import *
 from clean_data import clean_dataframe
@@ -24,10 +25,11 @@ def get_urls_from_main_page(main_url, attempts):
     """
     for _ in range(attempts):
         driver = webdriver.Chrome()
+        logging.info('connected to web driver')
         try:
             driver.get(main_url)
             elements = driver.find_elements(By.TAG_NAME, ELEMENTS_CLASS)
-            #todo add logging(elements[1])
+
             driver.execute_script(JS_CLICK, elements[1])
             WebDriverWait(driver, timeout=MAX_SLEEP).until(lambda d: d.find_elements(
                 By.CSS_SELECTOR, LINK_ELEMENT_CLASS))[-1]
@@ -45,15 +47,15 @@ def get_urls_from_main_page(main_url, attempts):
                 dic = {LINK: link, MAG_TEXT: mag_text, TIME: time}
                 urls.append(dic)
         except exc.TimeoutException as e:
-            print(f'Timeout {e}')
+            logging.error(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
-            print(f'Stale {e}')
+            logging.error(f'Stale {e}')
         except exc.InvalidSessionIdException as e:
-            print(f'ID {e}')
+            logging.error(f'ID {e}')
         except Exception as e:
-            print('Error not recognized')
-            print(e)
+            logging.error('Error not recognized')
         else:
+            logging.info('got urls for scraping')
             return urls
         finally:
             driver.close()
@@ -122,7 +124,6 @@ def get_event_details(detail_urls, driver):
         # Pairing categories with data itself
         data_extract = dict(list(zip(clean_elem, clean_data)))
         list_events.append(data_extract)
-        #todo add logging(f'Status: events from url {url} added to dict')
 
     return pd.DataFrame(list_events)
 
@@ -138,20 +139,22 @@ def scraper(attempts, url_list):
         driver = webdriver.Chrome()
         try:
             detail_url = get_event_url(url_list)
+            logging.info('url list created')
             dataframe = get_event_details(detail_url, driver)
+            logging.info('got event details and converted to dataframe')
             updated_df = clean_dataframe(dataframe)
+            logging.info('cleaned data and removed units from dataframe')
             list_of_dicts = updated_df.to_dict(orient='records')
         except exc.TimeoutException as e:
-            print(f'Timeout {e}')
+            logging.error(f'Timeout {e}')
         except exc.StaleElementReferenceException as e:
-            print(f'Stale {e}')
+            logging.error(f'Stale {e}')
         except exc.InvalidSessionIdException as e:
-            print(f'ID {e}')
+            logging.error(f'ID {e}')
         except Exception as e:
-            print('Error not recognized')
-            print(e)
+            logging.error('Error not recognized')
         else:
-            #todo add logging(f'Created list of dictionaries with {len(list_of_dicts)} events.')
+            logging.info(f'Created list of dictionaries with {len(list_of_dicts)} events.')
             return list_of_dicts
         finally:
             driver.close()
